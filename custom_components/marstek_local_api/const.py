@@ -8,7 +8,7 @@ CONF_PORT: Final = "port"
 
 # Default values
 DEFAULT_PORT: Final = 30000
-DEFAULT_SCAN_INTERVAL: Final = 180  # Base interval in seconds
+DEFAULT_SCAN_INTERVAL: Final = 120  # Base interval in seconds
 DISCOVERY_TIMEOUT: Final = 9  # Discovery window in seconds
 DISCOVERY_BROADCAST_INTERVAL: Final = 2  # Broadcast every 2 seconds during discovery
 
