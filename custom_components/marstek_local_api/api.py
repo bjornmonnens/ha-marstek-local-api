@@ -823,25 +823,22 @@ class MarstekProtocol(asyncio.DatagramProtocol):
 
     def __init__(self) -> None:
         """Initialize the protocol."""
-        self.port = None  # Will be set when socket is bound
+        self.port = None  # Will be set by connection_made
+
+    def connection_made(self, transport):
+        """Store the local port when the connection is established."""
+        try:
+            sock = transport.get_extra_info('socket')
+            if sock:
+                self.port = sock.getsockname()[1]
+        except Exception:
+            pass
 
     def datagram_received(self, data: bytes, addr: tuple) -> None:
         """Handle received datagram.
 
         Dispatch to all clients registered on this port.
         """
-        # Get the local port from the transport
-        if self.port is None:
-            try:
-                sock = None
-                # Try to get port from connection (we'll set it properly below)
-                for port, protocol in _shared_protocols.items():
-                    if protocol is self:
-                        self.port = port
-                        break
-            except Exception:
-                pass
-
         # Dispatch to all clients on this port
         if self.port and self.port in _clients_by_port:
             for client in _clients_by_port[self.port]:

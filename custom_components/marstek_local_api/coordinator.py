@@ -447,8 +447,8 @@ class MarstekDataUpdateCoordinator(DataUpdateCoordinator):
                 return {}
 
             def _command_delay() -> float:
-                """Back off a little between calls; go faster while probing initial contact."""
-                return 0.2 if is_first_update and not had_success else 1.0
+                """Back off between calls to prevent Marstek firmware overload."""
+                return 3.0
 
             if is_first_update:
                 _LOGGER.debug("First update - fetching device info")
