@@ -17,7 +17,16 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 
 from .api import MarstekAPIError, MarstekUDPClient
-from .const import CONF_PORT, DATA_COORDINATOR, DEFAULT_PORT, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_PORT,
+    DATA_COORDINATOR,
+    DEFAULT_PORT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TTL_SECONDS,
+    DOMAIN,
+    OPTION_SCAN_INTERVAL,
+    OPTION_STALENESS_TTL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -397,7 +406,7 @@ class OptionsFlow(config_entries.OptionsFlow):
     async def async_step_scan_interval(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Adjust polling interval."""
+        """Adjust polling interval en staleness TTL."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
@@ -406,11 +415,17 @@ class OptionsFlow(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Optional(
-                        "scan_interval",
+                        OPTION_SCAN_INTERVAL,
                         default=self._entry.options.get(
-                            "scan_interval", DEFAULT_SCAN_INTERVAL
+                            OPTION_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
                         ),
                     ): vol.All(vol.Coerce(int), vol.Range(min=15, max=900)),
+                    vol.Optional(
+                        OPTION_STALENESS_TTL,
+                        default=self._entry.options.get(
+                            OPTION_STALENESS_TTL, DEFAULT_TTL_SECONDS
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=60, max=86400)),
                 }
             ),
         )

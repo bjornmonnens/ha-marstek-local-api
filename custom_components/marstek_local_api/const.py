@@ -9,8 +9,13 @@ CONF_PORT: Final = "port"
 # Default values
 DEFAULT_PORT: Final = 30000
 DEFAULT_SCAN_INTERVAL: Final = 120  # Base interval in seconds
+DEFAULT_TTL_SECONDS: Final = 3600  # Default TTL for stale sensor data
 DISCOVERY_TIMEOUT: Final = 9  # Discovery window in seconds
 DISCOVERY_BROADCAST_INTERVAL: Final = 2  # Broadcast every 2 seconds during discovery
+
+# Config option keys (stored in entry.options)
+OPTION_SCAN_INTERVAL: Final = "scan_interval"
+OPTION_STALENESS_TTL: Final = "staleness_ttl"
 
 # Update intervals (in multiples of base interval)
 UPDATE_INTERVAL_FAST: Final = 1   # ES, Battery status (180s)

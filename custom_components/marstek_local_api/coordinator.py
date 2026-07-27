@@ -18,7 +18,9 @@ from .const import (
     COMMAND_MAX_ATTEMPTS,
     COMMAND_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TTL_SECONDS,
     DEVICE_MODEL_VENUS_D,
+    OPTION_STALENESS_TTL,
     UPDATE_INTERVAL_FAST,
     UPDATE_INTERVAL_MEDIUM,
     UPDATE_INTERVAL_SLOW,
@@ -276,7 +278,12 @@ class MarstekDataUpdateCoordinator(DataUpdateCoordinator):
 
         # Staleness tracking - track last successful update per category
         self.category_last_updated: dict[str, float] = {}
-        self.STALENESS_THRESHOLD = 3  # missed updates before invalidation
+        # Read TTL from config entry options, fall back to default
+        self.TTL_SECONDS = DEFAULT_TTL_SECONDS
+        if config_entry:
+            self.TTL_SECONDS = config_entry.options.get(
+                OPTION_STALENESS_TTL, DEFAULT_TTL_SECONDS
+            )
         self.STATIC_CATEGORIES = {"device", "wifi", "ble", "_diagnostic", "aggregates"}
 
         # Initialize compatibility matrix for version-specific scaling
@@ -375,11 +382,16 @@ class MarstekDataUpdateCoordinator(DataUpdateCoordinator):
     def is_category_fresh(self, category: str) -> bool:
         """Check if category data is fresh enough to display.
 
+        Uses a TTL-based approach: returns True as long as the TTL hasn't
+        expired since the last successful update. This means old values
+        are preserved during temporary WiFi disconnects instead of
+        immediately showing "Unknown".
+
         Args:
             category: The data category to check (battery, es, em, pv, mode, etc.)
 
         Returns:
-            True if data is fresh, False if stale or never received
+            True if data is within TTL, False if TTL expired or never received
         """
         # Static categories never go stale
         if category in self.STATIC_CATEGORIES:
@@ -389,14 +401,12 @@ class MarstekDataUpdateCoordinator(DataUpdateCoordinator):
         if category not in self.category_last_updated:
             return False
 
-        # Calculate time since last update
+        # Calculate time since last successful update
         last_update = self.category_last_updated[category]
         elapsed = time.time() - last_update
 
-        # Calculate max age (update interval * threshold)
-        max_age = self.update_interval.total_seconds() * self.STALENESS_THRESHOLD
-
-        return elapsed < max_age
+        # Use TTL instead of interval*threshold: show old value for longer
+        return elapsed < self.TTL_SECONDS
 
     def _build_command_diagnostics(self, prefix: str, stats: dict[str, Any] | None) -> dict[str, Any]:
         """Transform command stats into diagnostic fields."""
